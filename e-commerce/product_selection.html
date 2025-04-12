@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Select Products</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        body {
+            background: url('image3.jpeg') no-repeat center center fixed;
+            background-size: cover;
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        
+        .container {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            width: 400px;
+            box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        h2 {
+            color: #333;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        
+        select,
+        input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        
+        button {
+            width: 45%;
+            padding: 12px;
+            margin: 10px 5px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        
+        button:first-of-type {
+            background: #28a745;
+            color: white;
+        }
+        
+        button:first-of-type:hover {
+            background: #218838;
+        }
+        
+        button:last-of-type {
+            background: #dc3545;
+            color: white;
+        }
+        
+        button:last-of-type:hover {
+            background: #c82333;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h2>🛒 Select Your Product</h2>
+        <select id="productSelect">
+            <option value="">🔍 Search for a product...</option>
+        </select>
+        <input type="number" id="quantity" value="1" min="1">
+        <div>
+            <button onclick="proceed()">✅ Proceed</button>
+            <button onclick="window.location.href='index2.html'">❌ Cancel</button>
+        </div>
+    </div>
+
+    <script>
+        let products = [];
+
+        async function loadProducts(file) {
+            let response = await fetch(file);
+            let arrayBuffer = await response.arrayBuffer();
+            let workbook = XLSX.read(arrayBuffer, {
+                type: "array"
+            });
+            let sheetName = workbook.SheetNames[0];
+            let sheet = workbook.Sheets[sheetName];
+            let jsonData = XLSX.utils.sheet_to_json(sheet);
+            return jsonData.map(row => row[Object.keys(row)[0]]);
+        }
+
+        Promise.all([
+            loadProducts('UrbanGrocer.xlsx'),
+            loadProducts('GreenMart.xlsx'),
+            loadProducts('FreshChoice.xlsx')
+        ]).then(results => {
+            products = [...new Set([...results[0], ...results[1], ...results[2]])];
+            populateDropdown();
+        });
+
+        function populateDropdown() {
+            const productSelect = document.getElementById('productSelect');
+            productSelect.innerHTML = '<option value="">🔍 Search for a product...</option>';
+            products.forEach(product => {
+                if (product) {
+                    const option = document.createElement('option');
+                    option.value = product;
+                    option.textContent = product;
+                    productSelect.appendChild(option);
+                }
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', populateDropdown);
+
+        function proceed() {
+            const selectedProduct = document.getElementById('productSelect').value;
+            const quantity = document.getElementById('quantity').value;
+
+            if (selectedProduct && quantity > 0) {
+                localStorage.setItem('selectedProduct', selectedProduct);
+                localStorage.setItem('quantity', quantity);
+                Swal.fire({
+                    title: 'Selected Product',
+                    text: `You have selected ${quantity} unit(s) of ${selectedProduct}.`,
+                    icon: 'success',
+                    confirmButtonText: 'OK'
+                }).then(() => {
+                    window.location.href = 'budget_entry.html';
+                });
+            } else {
+                Swal.fire("Error", "Please select a product and quantity.", "error");
+            }
+        }
+    </script>
+</body>
+
+</html>
